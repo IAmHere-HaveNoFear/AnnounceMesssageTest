@@ -1,0 +1,13 @@
+{
+    "display_name": "AnnounceMesssageTest
+",
+    "loading_order": 9,
+    "requires": [],
+    "optional": [],
+    "js": "index.js",
+    "css": "style.css",
+    "author": "ceruleandeep",
+    "version": "0.0.1",
+    "homePage": "https://github.com/IAmHere-HaveNoFear/AnnounceMesssageTest?tab=readme-ov-file",
+    "auto_update": false
+}
