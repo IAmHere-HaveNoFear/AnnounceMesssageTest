@@ -1,5 +1,3 @@
-import { Dex } from '@pkmn/dex';
-
 import { registerSlashCommand } from "../../../slash-commands.js";
 
 async function jsCallback(value) {
