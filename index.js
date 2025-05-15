@@ -6,7 +6,14 @@
 
 // Import necessary modules from SillyTavern's backend
 import { registerSlashCommand } from "../../slash-commands.js";
-import { callFrontendExtensionFunction } from "../../extensions.js"; // Hypothetical function - needs verification
+import { renderExtensionTemplateAsync } from "../../../extensions.js";
+import { power_user } from "../../../power-user.js";
+import { promptManager } from "../../../openai.js";
+import { executeSlashCommandsWithOptions } from "../../../slash-commands.js";
+import { eventSource, event_types, streamingProcessor, saveSettingsDebounced } from "../../../../script.js";
+import { Handlebars, hljs } from "../../../../lib.js";
+import { NAME } from "./common.js";
+import { loadSettings } from "./settings.js";
 
 // --- Hypothetical Function to Communicate with Frontend ---
 // SillyTavern extensions need a way for the backend (Node.js)
