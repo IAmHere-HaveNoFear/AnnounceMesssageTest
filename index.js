@@ -78,9 +78,6 @@ async function loadMoves() {
     ctx.variables.local.set("moveDB", JSON.stringify(result));
     console.log("✅ Moves loaded and saved to moveDB:", result);
 
-    // Optional: trigger follow-up macro (remove this if you don't need it)
-    ctx.executeSlashCommands("/run onMovesLoaded");
-
   } catch (err) {
     console.error("❌ Error loading moves:", err);
   }
