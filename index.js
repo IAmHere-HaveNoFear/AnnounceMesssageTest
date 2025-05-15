@@ -1,23 +1,71 @@
-import { registerSlashCommand } from "../../../slash-commands.js";
+function loadMovesFromIndexedDB(moveList) {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open('pokemonMovesDB', 1);
 
-async function jsCallback(value) {
-    try {
-const asyncFunc = new Function(`"use strict"; return (async () => { ${value} })();`);
+    request.onerror = () => reject('Failed to open IndexedDB');
 
-        return await asyncFunc();
-    } catch (err) {
-        return `Error: ${err.message}`;
-    }
+    request.onsuccess = event => {
+      const db = event.target.result;
+      const transaction = db.transaction('moves', 'readonly');
+      const store = transaction.objectStore('moves');
+
+      const movesData = {};
+      let completed = 0;
+
+      moveList.forEach(moveName => {
+        const getRequest = store.get(moveName);
+
+        getRequest.onsuccess = () => {
+          if (getRequest.result) {
+            movesData[moveName] = getRequest.result;
+          }
+          completed++;
+          if (completed === moveList.length) {
+            resolve(movesData);
+          }
+        };
+
+        getRequest.onerror = () => {
+          completed++;
+          if (completed === moveList.length) {
+            resolve(movesData); // still resolve with partial data
+          }
+        };
+      });
+    };
+  });
 }
 
-registerSlashCommand(
-    'js',
-    (_, value) => jsCallback(value),
-    [],
-    '<span class="monospace">(javascript)</span> – run async JavaScript and return the result, e.g. <tt>/js await fetch("...")</tt>',
-    true,
-    true
-);
+function getActivePokemon() {
+  const raw = SillyTavern.getContext().variables.local.get("activePokemon");
+  try {
+    return JSON.parse(raw);
+  } catch (e) {
+    console.error("Failed to parse activePokemon:", e);
+    return null;
+  }
+}
 
-console.log("Received JS code:", value);
+async function loadMoves() {
+  const ctx = SillyTavern.getContext();
+  const activePokemon = getActivePokemon();
 
+  if (!activePokemon || !Array.isArray(activePokemon.movelist)) {
+    console.error("Invalid activePokemon or movelist.");
+    ctx.variables.local.set("moveDB", "{}");
+    return;
+  }
+
+  try {
+    const data = await loadMovesFromIndexedDB(activePokemon.movelist);
+    ctx.variables.local.set("moveDB", JSON.stringify(data));
+    ctx.executeSlashCommands("/run onMovesLoaded");
+  } catch (err) {
+    console.error("Failed to load moves:", err);
+    ctx.variables.local.set("moveDB", "{}");
+  }
+}
+
+window.myExtension = {
+  loadMoves
+};
