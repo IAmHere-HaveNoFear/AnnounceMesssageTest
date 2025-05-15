@@ -2,11 +2,8 @@ import { registerSlashCommand } from "../../../slash-commands.js";
 
 async function jsCallback(value) {
     try {
-        const asyncFunc = new Function(`
-            return (async () => {
-                ${value}
-            })();
-        `);
+const asyncFunc = new Function(`"use strict"; return (async () => { ${value} })();`);
+
         return await asyncFunc();
     } catch (err) {
         return `Error: ${err.message}`;
