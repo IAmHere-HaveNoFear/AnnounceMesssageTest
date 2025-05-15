@@ -133,5 +133,5 @@ async function prepareBattleMoves() {
 
 // Expose the main function to the global scope so /runjs can call it
 window.myExtension = {
-  prepareBattleMoves // Renamed to be more descriptive
+  prepareBattleMoves 
 };
