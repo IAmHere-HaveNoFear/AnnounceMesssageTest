@@ -1,21 +1,27 @@
 import { registerSlashCommand } from "../../../slash-commands.js";
 
-function jsCallback(value) {
-  try {
-    return eval(value);
-  } catch (e) {
-    return `Error: ${e.message}`;
-  }
+async function jsCallback(value) {
+    try {
+        const asyncFunc = new Function(`
+            return (async () => {
+                ${value}
+            })();
+        `);
+        return await asyncFunc();
+    } catch (err) {
+        return `Error: ${err.message}`;
+    }
 }
 
 registerSlashCommand(
-  'js',
-  (_, value) => jsCallback(value),
-  [],
-  '<span class="monospace">(javascript)</span> – run JavaScript and return the result, e.g. <tt>/js alert("Hi!");</tt>',
-  true,
-  true
+    'runjs',
+    (_, value) => jsCallback(value),
+    [],
+    '<span class="monospace">(javascript)</span> – run async JavaScript and return the result, e.g. <tt>/runjs await fetch("...")</tt>',
+    true,
+    true
 );
+
 
 
 // index.js
