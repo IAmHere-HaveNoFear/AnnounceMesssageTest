@@ -25,6 +25,7 @@ registerSlashCommand(
 // index.js (within your custom extension)
 
 // ... (other imports and functions like jsCallback, registerSlashCommand) ...
+import {Dex, build, index} from '@pkmn/dex';
 
 // Helper function to load move data from @pkmn/dex
 async function loadMovesFromPkmnDex(moveNames) {
