@@ -8,6 +8,6 @@
     "css": "style.css",
     "author": "ceruleandeep",
     "version": "0.0.1",
-    "homePage": "https://github.com/IAmHere-HaveNoFear/AnnounceMesssageTest?tab=readme-ov-file",
+    "homePage": "https://github.com/IAmHere-HaveNoFear/AnnounceMesssageTest",
     "auto_update": false
 }
