@@ -25,6 +25,81 @@ registerSlashCommand(
 // index.js (within your custom extension)
 
 // ... (other imports and functions like jsCallback, registerSlashCommand) ...
+// index.js (within your custom extension)
+
+// Access the globally loaded Dex object
+const dex = window.pkmn ? window.pkmn.dex : null;
+
+// You might also need data if using Generations API
+// const data = window.pkmn ? window.pkmn.data : null;
+// const gens = data ? new data.Generations(dex) : null;
+
+
+// Check if Dex loaded successfully
+if (!dex) {
+    console.error("FATAL ERROR: @pkmn/dex not loaded in global scope. Cannot register /runjs command correctly.");
+    // You might want to throw an error or prevent command registration
+} else {
+    console.log("✅ @pkmn/dex found in global scope.");
+
+    // Your jsCallback function needs to use this 'dex' variable
+    async function jsCallback(value) {
+        try {
+            // Code to execute the user's JS string
+            const asyncFunc = new Function(`
+                // Inside this function, 'dex' should be available due to scope chain
+                // Or you might need to pass it in if the Function() constructor's scope is limited
+                const Dex = window.pkmn.dex; // Re-access global just to be safe
+                ${value}
+            `);
+            return await asyncFunc();
+        } catch (err) {
+            // Handle errors
+             console.error("Error executing /runjs command JS:", err);
+            return `Error: ${err.message}`;
+        }
+    }
+
+    // Register the command only if dex loaded
+    registerSlashCommand(
+        'runjs',
+        (_, value) => jsCallback(value),
+        [],
+        '<span class="monospace">(javascript)</span> – run async JavaScript and return the result, e.g. <tt>/runjs await fetch("...")</tt>',
+        true,
+        true // This 'true' might relate to command behavior, check docs
+    );
+
+    // Your loadMovesFromPkmnDex function should also use the global dex object
+    async function loadMovesFromPkmnDex(moveNames) {
+         const Dex = window.pkmn.dex; // Access globally loaded Dex
+
+         if (!Dex) {
+             console.error("❌ @pkmn/dex not available in loadMovesFromPkmnDex.");
+             return {}; // Or throw
+         }
+
+         // ... rest of your loadMovesFromPkmnDex logic using Dex ...
+         const move = Dex.moves.get(moveName); // Use the global Dex variable
+         // ...
+    }
+
+    // Your main function to be called by /runjs
+    async function prepareBattleMoves() {
+         // ... Your existing logic ...
+         const detailedMovesData = await loadMovesFromPkmnDex(moveListNames); // This calls your local function
+         // ...
+    }
+
+    // Expose the main function to the global scope
+    window.myExtension = {
+        prepareBattleMoves
+    };
+
+    console.log("✅ /runjs command and window.myExtension.prepareBattleMoves registered.");
+
+} // End of if(!dex) check
+
 
 // Helper function to load move data from @pkmn/dex
 async function loadMovesFromPkmnDex(moveNames) {
