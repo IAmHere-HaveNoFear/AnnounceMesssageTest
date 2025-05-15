@@ -18,3 +18,6 @@ registerSlashCommand(
     true,
     true
 );
+
+console.log("Received JS code:", value);
+
