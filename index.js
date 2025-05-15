@@ -1,3 +1,25 @@
+import { registerSlashCommand } from "../../../slash-commands.js";
+
+function jsCallback(value) {
+  try {
+    return eval(value);
+  } catch (e) {
+    return `Error: ${e.message}`;
+  }
+}
+
+registerSlashCommand(
+  'js',
+  (_, value) => jsCallback(value),
+  [],
+  '<span class="monospace">(javascript)</span> – run JavaScript and return the result, e.g. <tt>/js alert("Hi!");</tt>',
+  true,
+  true
+);
+
+
+// index.js
+
 function loadMovesFromIndexedDB(moveList) {
   return new Promise((resolve, reject) => {
     const request = indexedDB.open('pokemonMovesDB', 1);
@@ -28,7 +50,7 @@ function loadMovesFromIndexedDB(moveList) {
         getRequest.onerror = () => {
           completed++;
           if (completed === moveList.length) {
-            resolve(movesData); // still resolve with partial data
+            resolve(movesData); // Continue even on failed lookups
           }
         };
       });
@@ -36,36 +58,35 @@ function loadMovesFromIndexedDB(moveList) {
   });
 }
 
-function getActivePokemon() {
-  const raw = SillyTavern.getContext().variables.local.get("activePokemon");
-  try {
-    return JSON.parse(raw);
-  } catch (e) {
-    console.error("Failed to parse activePokemon:", e);
-    return null;
-  }
-}
-
 async function loadMoves() {
   const ctx = SillyTavern.getContext();
-  const activePokemon = getActivePokemon();
+  const raw = ctx.variables.local.get("activePokemon");
 
-  if (!activePokemon || !Array.isArray(activePokemon.movelist)) {
-    console.error("Invalid activePokemon or movelist.");
-    ctx.variables.local.set("moveDB", "{}");
+  let activePokemon;
+  try {
+    activePokemon = JSON.parse(raw);
+  } catch (e) {
+    console.error("Failed to parse activePokemon:", e);
     return;
   }
 
+  const moveList = activePokemon?.movelist || [];
+
   try {
-    const data = await loadMovesFromIndexedDB(activePokemon.movelist);
-    ctx.variables.local.set("moveDB", JSON.stringify(data));
+    const result = await loadMovesFromIndexedDB(moveList);
+
+    ctx.variables.local.set("moveDB", JSON.stringify(result));
+    console.log("✅ Moves loaded and saved to moveDB:", result);
+
+    // Optional: trigger follow-up macro (remove this if you don't need it)
     ctx.executeSlashCommands("/run onMovesLoaded");
+
   } catch (err) {
-    console.error("Failed to load moves:", err);
-    ctx.variables.local.set("moveDB", "{}");
+    console.error("❌ Error loading moves:", err);
   }
 }
 
+// Attach to global scope so you can call it with /js
 window.myExtension = {
   loadMoves
 };
