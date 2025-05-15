@@ -24,50 +24,74 @@ registerSlashCommand(
 
 import {Dex} from '@pkmn/dex';
 
-export async function loadKantoMovesToDB() {
-	const request = indexedDB.open('MyPokeDB', 1);
+export async function loadMovesIfMissing(moveList) {
+	return new Promise((resolve, reject) => {
+		const request = indexedDB.open('MyPokeDB', 1);
 
-	request.onupgradeneeded = function (event) {
-		const db = event.target.result;
-		if (!db.objectStoreNames.contains('moveDB')) {
-			db.createObjectStore('moveDB', { keyPath: 'id' });
-		}
-	};
-
-	request.onsuccess = function () {
-		const db = request.result;
-		const transaction = db.transaction(['moveDB'], 'readwrite');
-		const store = transaction.objectStore('moveDB');
-
-		// Get Gen 1 Kanto moves
-		for (const id in Dex.moves.all()) {
-			const move = Dex.moves.get(id);
-			if (move.gen === 1) {
-				const moveData = {
-					id: move.id,
-					name: move.name,
-					type: move.type,
-					basePower: move.basePower,
-					category: move.category,
-					accuracy: move.accuracy,
-					pp: move.pp,
-					priority: move.priority,
-					target: move.target,
-					flags: move.flags,
-					desc: move.shortDesc,
-				};
-				store.put(moveData);
+		request.onupgradeneeded = function (event) {
+			const db = event.target.result;
+			if (!db.objectStoreNames.contains('moveDB')) {
+				db.createObjectStore('moveDB', { keyPath: 'id' });
 			}
-		}
+		};
 
-		transaction.oncomplete = () => console.log('Kanto moves saved to IndexedDB');
-		transaction.onerror = () => console.error('Transaction error:', transaction.error);
-	};
+		request.onsuccess = function () {
+			const db = request.result;
+			const transaction = db.transaction(['moveDB'], 'readwrite');
+			const store = transaction.objectStore('moveDB');
 
-	request.onerror = function () {
-		console.error('IndexedDB error:', request.error);
-	};
+			const results = {};
+			let completed = 0;
+
+			moveList.forEach(name => {
+				const id = Dex.moves.get(name)?.id;
+				if (!id) {
+					completed++;
+					return;
+				}
+
+				const getRequest = store.get(id);
+				getRequest.onsuccess = () => {
+					if (getRequest.result) {
+						// Already in DB
+						results[name] = getRequest.result;
+						done();
+					} else {
+						// Not in DB, add it
+						const move = Dex.moves.get(name);
+						const moveData = {
+							id: move.id,
+							name: move.name,
+							type: move.type,
+							basePower: move.basePower,
+							category: move.category,
+							accuracy: move.accuracy,
+							pp: move.pp,
+							priority: move.priority,
+							target: move.target,
+							flags: move.flags,
+							desc: move.shortDesc,
+						};
+						store.put(moveData);
+						results[name] = moveData;
+						done();
+					}
+				};
+				getRequest.onerror = () => done();
+			});
+
+			function done() {
+				completed++;
+				if (completed === moveList.length) {
+					resolve(results);
+				}
+			}
+		};
+
+		request.onerror = () => reject('Failed to open IndexedDB');
+	});
 }
+
 
 
 
