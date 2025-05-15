@@ -22,6 +22,54 @@ registerSlashCommand(
     true
 );
 
+import {Dex} from '@pkmn/dex';
+
+export async function loadKantoMovesToDB() {
+	const request = indexedDB.open('MyPokeDB', 1);
+
+	request.onupgradeneeded = function (event) {
+		const db = event.target.result;
+		if (!db.objectStoreNames.contains('moveDB')) {
+			db.createObjectStore('moveDB', { keyPath: 'id' });
+		}
+	};
+
+	request.onsuccess = function () {
+		const db = request.result;
+		const transaction = db.transaction(['moveDB'], 'readwrite');
+		const store = transaction.objectStore('moveDB');
+
+		// Get Gen 1 Kanto moves
+		for (const id in Dex.moves.all()) {
+			const move = Dex.moves.get(id);
+			if (move.gen === 1) {
+				const moveData = {
+					id: move.id,
+					name: move.name,
+					type: move.type,
+					basePower: move.basePower,
+					category: move.category,
+					accuracy: move.accuracy,
+					pp: move.pp,
+					priority: move.priority,
+					target: move.target,
+					flags: move.flags,
+					desc: move.shortDesc,
+				};
+				store.put(moveData);
+			}
+		}
+
+		transaction.oncomplete = () => console.log('Kanto moves saved to IndexedDB');
+		transaction.onerror = () => console.error('Transaction error:', transaction.error);
+	};
+
+	request.onerror = function () {
+		console.error('IndexedDB error:', request.error);
+	};
+}
+
+
 
 
 // index.js
