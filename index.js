@@ -41,7 +41,7 @@ async function sendJsCodeToFrontendAndAwait(jsCodeString) {
     // This API call should pass the jsCodeString and wait for the frontend
     // to signal that the execution is complete (especially for async code).
 
-    // Possible patterns (need to verify with ST source/docs/community):
+    // Possible patterns (need to verify with ST source/docs/community)
     // 1. A direct call to a registered frontend function ID.
     // 2. Sending a message via a backend-to-frontend communication channel.
     // 3. Using a helper function provided by the extensions API.
